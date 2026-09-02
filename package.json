@@ -1,0 +1,13 @@
+{
+  "name": "lan-drop",
+  "version": "1.0.0",
+  "description": "Huge file transfer over your local WiFi — no cloud, no dependencies",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "clean": "node server.js --clean --exit"
+  },
+  "engines": {
+    "node": ">=18.15"
+  }
+}
