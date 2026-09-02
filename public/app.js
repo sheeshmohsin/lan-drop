@@ -173,15 +173,35 @@
     if (document.visibilityState === 'visible' && uploading) acquireWakeLock();
   });
 
+  // Wake Lock is unavailable on plain-HTTP pages (non-secure context), i.e. the
+  // normal LAN case — fall back to telling the sender to keep the screen on.
+  function setKeepAwakeNotice(show) {
+    let notice = document.getElementById('keep-awake-notice');
+    if (!show) {
+      if (notice) notice.remove();
+      return;
+    }
+    if ('wakeLock' in navigator || notice) return;
+    notice = document.createElement('div');
+    notice.id = 'keep-awake-notice';
+    notice.style.cssText =
+      'margin-top:10px;padding:10px 14px;border-radius:10px;background:#3d3320;' +
+      'color:#ffd479;font-size:0.85rem;text-align:center;';
+    notice.textContent = '⚠️ Keep your screen on and stay on this page until the upload finishes — locking the phone pauses the transfer.';
+    $('#uploads').before(notice);
+  }
+
   async function processQueue() {
     if (uploading) return;
     const next = queue.shift();
     if (!next) {
       releaseWakeLock();
+      setKeepAwakeNotice(false);
       return;
     }
     uploading = true;
     acquireWakeLock();
+    setKeepAwakeNotice(true);
     try {
       await uploadFile(next.file, next.card);
     } finally {
