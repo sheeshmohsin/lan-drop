@@ -16,6 +16,7 @@ Designed to be gentle on your WiFi router:
 - **Everything stays on the LAN** — zero internet traffic.
 - **Resumable** — if WiFi drops at 9 GB, re-select the same file and it continues where it stopped.
 - **Constant memory** — uploads stream straight to disk; downloads use the browser's native download manager (with pause/resume), so phones can receive files far bigger than their RAM.
+- **Screen-lock aware** — phones pause transfers when the screen locks. The page holds a screen wake lock while uploading where the browser allows it, and otherwise shows a clear "keep your screen on" warning until the upload finishes. Either way, an interrupted upload resumes from where it stopped.
 
 ## Run
 
