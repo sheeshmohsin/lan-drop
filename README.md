@@ -6,6 +6,12 @@ Run it on a machine in your home network, and phones on the same WiFi can transf
 
 You have a laptop/desktop at home and someone wants to send you a 10 GB video from their phone. Start LAN Drop on your machine, share the printed link (or let them scan the QR code) — they open it in their phone browser, pick the file, and it lands directly in a folder on your machine. Anyone else online on the page can also grab any received file, so it doubles as device-to-device transfer for the whole household.
 
+## Send to a specific device
+
+The "Send to" selector above the drop zone lists everyone currently online. Pick a device (e.g. "📱 Mom's phone only") before choosing your file and only that device — plus you, the sender — will see it in their Files list, highlighted as "📥 sent to you". Leave it on "📢 Everyone" for the shared pool.
+
+Note: targeting controls what shows up in each device's list, not access — there's no authentication, so anyone on your WiFi with a direct file URL can still download it. Fine for a trusted home network.
+
 ## How it works
 
 Your machine runs a tiny server. Anyone on the same WiFi opens the link in their phone/laptop browser and can send files to your machine — or to anyone else online, since every received file appears in a shared list that everyone can download from.

@@ -178,6 +178,9 @@ async function handleUploadChunk(req, res, url) {
   const size = Number(url.searchParams.get('size'));
   const offset = Number(url.searchParams.get('offset'));
   const sender = String(url.searchParams.get('sender') || 'Unknown').slice(0, 40);
+  const senderId = String(url.searchParams.get('senderId') || '').slice(0, 64);
+  const to = String(url.searchParams.get('to') || '').slice(0, 64); // empty = everyone
+  const toName = String(url.searchParams.get('toName') || '').slice(0, 40);
 
   if (!validUploadId(id)) return sendJson(res, 400, { error: 'bad id' });
   if (!sanitizeName(name)) return sendJson(res, 400, { error: 'bad filename' });
@@ -220,10 +223,11 @@ async function handleUploadChunk(req, res, url) {
     // Complete — move into place and announce.
     const finalName = uniqueName(sanitizeName(name));
     await fsp.rename(partPath, path.join(STORAGE, finalName));
-    meta[finalName] = { sender, time: Date.now() };
+    meta[finalName] = { sender, senderId, to, toName, time: Date.now() };
     saveMeta();
-    broadcast('files', { added: finalName, sender });
-    console.log(`received ${finalName} (${(size / 1024 ** 2).toFixed(1)} MB) from ${sender}`);
+    broadcast('files', { added: finalName, sender, to, toName });
+    const dest = to ? ` for ${toName || to}` : '';
+    console.log(`received ${finalName} (${(size / 1024 ** 2).toFixed(1)} MB) from ${sender}${dest}`);
     sendJson(res, 200, { done: true, name: finalName });
   } catch (err) {
     console.error(`upload ${id} chunk failed:`, err.message);
@@ -236,18 +240,24 @@ async function handleUploadChunk(req, res, url) {
 
 // ---------------------------------------------------------------- files
 
-async function listFiles() {
+// `me` filters targeted files: public files for all, targeted ones only for
+// their recipient and sender. No `me` (curl/debug) returns everything.
+async function listFiles(me) {
   const entries = await fsp.readdir(STORAGE, { withFileTypes: true });
   const files = [];
   for (const entry of entries) {
     if (!entry.isFile() || entry.name.startsWith('.')) continue;
-    const stat = await fsp.stat(path.join(STORAGE, entry.name));
     const info = meta[entry.name] || {};
+    if (me && info.to && info.to !== me && info.senderId !== me) continue;
+    const stat = await fsp.stat(path.join(STORAGE, entry.name));
     files.push({
       name: entry.name,
       size: stat.size,
       time: info.time || stat.mtimeMs,
       sender: info.sender || '—',
+      senderId: info.senderId || '',
+      to: info.to || '',
+      toName: info.toName || '',
     });
   }
   return files.sort((a, b) => b.time - a.time);
@@ -328,7 +338,9 @@ const server = http.createServer(async (req, res) => {
   const p = url.pathname;
   try {
     if (req.method === 'GET' && p === '/events') return handleEvents(req, res, url);
-    if (req.method === 'GET' && p === '/api/files') return sendJson(res, 200, await listFiles());
+    if (req.method === 'GET' && p === '/api/files') {
+      return sendJson(res, 200, await listFiles(url.searchParams.get('me') || ''));
+    }
     if (req.method === 'GET' && p === '/api/upload/status') return handleUploadStatus(res, url);
     if (req.method === 'PUT' && p === '/api/upload') return handleUploadChunk(req, res, url);
     if (req.method === 'GET' && p === '/api/info') {

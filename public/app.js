@@ -47,6 +47,30 @@
       chip.textContent = peer.id === clientId ? `${peer.name} (you)` : peer.name;
       box.appendChild(chip);
     }
+    renderSendTargets(peers);
+  }
+
+  // Rebuild the "Send to" selector from presence, keeping the current choice.
+  function renderSendTargets(peers) {
+    const select = $('#send-to');
+    const previous = select.value;
+    select.innerHTML = '<option value="">📢 Everyone</option>';
+    for (const peer of peers) {
+      if (peer.id === clientId) continue;
+      const option = document.createElement('option');
+      option.value = peer.id;
+      option.textContent = `📱 ${peer.name} only`;
+      select.appendChild(option);
+    }
+    if ([...select.options].some((option) => option.value === previous)) select.value = previous;
+  }
+
+  function currentTarget() {
+    const select = $('#send-to');
+    const option = select.selectedOptions[0];
+    return select.value
+      ? { to: select.value, toName: option.textContent.replace(/^📱 /, '').replace(/ only$/, '') }
+      : { to: '', toName: '' };
   }
 
   // --- file list ---
@@ -66,7 +90,7 @@
 
   async function refreshFiles() {
     try {
-      const files = await (await fetch('/api/files')).json();
+      const files = await (await fetch(`/api/files?me=${clientId}`)).json();
       const box = $('#files');
       box.innerHTML = '';
       if (!files.length) {
@@ -75,7 +99,8 @@
       }
       for (const file of files) {
         const row = document.createElement('div');
-        row.className = 'file-row';
+        const forMe = file.to && file.to === clientId;
+        row.className = 'file-row' + (forMe ? ' for-me' : '');
 
         const info = document.createElement('div');
         info.className = 'file-info';
@@ -84,7 +109,11 @@
         fname.textContent = file.name;
         const fmeta = document.createElement('div');
         fmeta.className = 'fmeta';
-        fmeta.textContent = `${formatSize(file.size)} · from ${file.sender} · ${formatTime(file.time)}`;
+        let route = `from ${file.sender}`;
+        if (forMe) route = `from ${file.sender} — sent to you`;
+        else if (file.to && file.senderId === clientId) route = `you → ${file.toName || 'device'} only`;
+        else if (file.to) route = `${file.sender} → ${file.toName || 'device'}`;
+        fmeta.textContent = `${formatSize(file.size)} · ${route} · ${formatTime(file.time)}`;
         info.append(fname, fmeta);
 
         const download = document.createElement('a');
@@ -113,9 +142,11 @@
   const queue = [];
   let uploading = false;
 
-  function uploadIdFor(file) {
+  function uploadIdFor(file, to) {
     // Stable id so re-selecting the same file resumes where it stopped.
-    const key = `${file.name}|${file.size}|${file.lastModified}|${clientId}`;
+    // Includes the target so the same file sent to a different device
+    // doesn't collide with an earlier partial upload.
+    const key = `${file.name}|${file.size}|${file.lastModified}|${clientId}|${to}`;
     let hash = 5381;
     for (let i = 0; i < key.length; i++) hash = ((hash * 33) ^ key.charCodeAt(i)) >>> 0;
     let hash2 = 52711;
@@ -141,9 +172,10 @@
   }
 
   function enqueue(files) {
+    const target = currentTarget(); // capture at enqueue time
     for (const file of files) {
       if (!file.size) continue;
-      queue.push({ file, card: makeUploadCard(file) });
+      queue.push({ file, target, card: makeUploadCard(file) });
     }
     processQueue();
   }
@@ -203,7 +235,7 @@
     acquireWakeLock();
     setKeepAwakeNotice(true);
     try {
-      await uploadFile(next.file, next.card);
+      await uploadFile(next.file, next.card, next.target);
     } finally {
       uploading = false;
       processQueue();
@@ -212,8 +244,8 @@
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  async function uploadFile(file, card) {
-    const id = uploadIdFor(file);
+  async function uploadFile(file, card, target = { to: '', toName: '' }) {
+    const id = uploadIdFor(file, target.to);
     let offset = 0;
     let retries = 0;
     const speeds = [];
@@ -236,6 +268,9 @@
           size: String(file.size),
           offset: String(offset),
           sender: deviceName(),
+          senderId: clientId,
+          to: target.to,
+          toName: target.toName,
         });
         const res = await fetch(`/api/upload?${params}`, { method: 'PUT', body: chunk });
         const body = await res.json();
@@ -248,7 +283,7 @@
 
         retries = 0;
         if (body.done) {
-          card.set(100, 'sent ✓', 'done');
+          card.set(100, target.to ? `sent to ${target.toName} ✓` : 'sent ✓', 'done');
           return;
         }
         const elapsed = (Date.now() - started) / 1000;

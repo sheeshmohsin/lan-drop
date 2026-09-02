@@ -36,6 +36,14 @@
     background: var(--card-2); color: var(--text); border: 1px solid #2c3a5a;
     border-radius: 8px; padding: 6px 10px; font-size: 0.9rem; width: 130px;
   }
+  #send-to-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  #send-to-row label { color: var(--muted); font-size: 0.88rem; }
+  #send-to {
+    flex: 1; background: var(--card-2); color: var(--text); border: 1px solid #2c3a5a;
+    border-radius: 9px; padding: 9px 12px; font-size: 0.92rem; appearance: none;
+  }
+  .file-row.for-me { background: #1c2f2a; border-radius: 10px; padding: 11px 12px; margin: 4px -12px; border-bottom: 0; }
+  .file-row.for-me .fname::before { content: "📥 "; }
   #drop-zone {
     border: 2px dashed #35446b; border-radius: var(--radius); padding: 28px 16px;
     text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
@@ -94,6 +102,10 @@
 
   <div class="card">
     <h2>Send a file</h2>
+    <div id="send-to-row">
+      <label for="send-to">Send to</label>
+      <select id="send-to"><option value="">📢 Everyone</option></select>
+    </div>
     <div id="drop-zone">
       <div class="big">📤</div>
       <div><strong>Tap to choose files</strong></div>
