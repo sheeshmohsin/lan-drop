@@ -1,10 +1,14 @@
 # LAN Drop
 
-Transfer huge files (10 GB+) between devices on your home WiFi. No cloud, no accounts, no dependencies — one Node.js file.
+Run it on a machine in your home network, and phones on the same WiFi can transfer huge files (10 GB+) straight to that machine — through nothing but their browser. No cloud, no accounts, no app install, no dependencies — one Node.js file.
+
+## Use case
+
+You have a laptop/desktop at home and someone wants to send you a 10 GB video from their phone. Start LAN Drop on your machine, share the printed link (or let them scan the QR code) — they open it in their phone browser, pick the file, and it lands directly in a folder on your machine. Anyone else online on the page can also grab any received file, so it doubles as device-to-device transfer for the whole household.
 
 ## How it works
 
-Your Mac runs a tiny server. Anyone on the same WiFi opens the link (or scans the QR code shown in the app) in their phone/laptop browser and can send files to your Mac — or to anyone else online, since every received file appears in a shared list that everyone can download from.
+Your machine runs a tiny server. Anyone on the same WiFi opens the link in their phone/laptop browser and can send files to your machine — or to anyone else online, since every received file appears in a shared list that everyone can download from.
 
 Designed to be gentle on your WiFi router:
 
