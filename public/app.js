@@ -148,11 +148,40 @@
     processQueue();
   }
 
+  // Keep the phone screen awake during uploads — mobile browsers freeze the
+  // page (and the transfer) when the screen locks. Wake locks are released by
+  // the OS whenever the page is hidden, so re-acquire on return if still busy.
+  let wakeLock = null;
+  async function acquireWakeLock() {
+    if (!('wakeLock' in navigator) || wakeLock) return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => {
+        wakeLock = null;
+      });
+    } catch {
+      /* unsupported or denied — uploads still work, screen may just sleep */
+    }
+  }
+  function releaseWakeLock() {
+    if (wakeLock) {
+      wakeLock.release().catch(() => {});
+      wakeLock = null;
+    }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && uploading) acquireWakeLock();
+  });
+
   async function processQueue() {
     if (uploading) return;
     const next = queue.shift();
-    if (!next) return;
+    if (!next) {
+      releaseWakeLock();
+      return;
+    }
     uploading = true;
+    acquireWakeLock();
     try {
       await uploadFile(next.file, next.card);
     } finally {
