@@ -2,6 +2,8 @@
 
 Run it on a machine in your home network, and phones on the same WiFi can transfer huge files (10 GB+) straight to that machine — through nothing but their browser. No cloud, no accounts, no app install, no dependencies — one Node.js file.
 
+<p align="center"><img src="docs/screenshot.png" alt="LAN Drop UI — send files to everyone or a specific device, see who's online, and invite others via QR code" width="560"></p>
+
 ## Use case
 
 You have a laptop/desktop at home and someone wants to send you a 10 GB video from their phone. Start LAN Drop on your machine, share the printed link (or let them scan the QR code) — they open it in their phone browser, pick the file, and it lands directly in a folder on your machine. Anyone else online on the page can also grab any received file, so it doubles as device-to-device transfer for the whole household.
