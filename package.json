@@ -2,6 +2,7 @@
   "name": "lan-drop",
   "version": "1.0.0",
   "description": "Huge file transfer over your local WiFi — no cloud, no dependencies",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "start": "node server.js",
